@@ -67,3 +67,8 @@ __recovery/
 src/pkgDarkThreading.res
 html
 /src/*.log
+bpl
+Linux64
+Win64
+Android
+/src/*.xml

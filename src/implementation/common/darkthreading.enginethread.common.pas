@@ -24,15 +24,14 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 //------------------------------------------------------------------------------
-unit dg.threading.enginethread.common;
+unit darkthreading.enginethread.common;
 
 interface
 uses
   system.generics.collections,
-  dg.threading.messagebus,
-  dg.threading.threadmethod.common,
-  dg.threading.subsystem,
-  dg.threading.enginethread;
+  darkthreading,
+  darkthreading.enginethread,
+  darkthreading.threadmethod.common;
 
 type
   TCommonEngineThread = class( TInterfacedObject, IEngineThread )

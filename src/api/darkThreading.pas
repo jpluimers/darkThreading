@@ -320,18 +320,20 @@ type
   end;
 
 function MessageBus: IMessageBus;
+function ThreadEngine: IThreadEngine;
 
 implementation
-{$ifdef MSWINDOWS}
 uses
+  darkthreading.threadengine.common,
+{$ifdef MSWINDOWS}
   darkthreading.messagebus.windows;
 {$else}
-uses
   darkthreading.messagebus.posix;
 {$endif}
 
 var
   SingletonMessageBus: IMessageBus = nil;
+  SingletonThreadEngine: IThreadEngine = nil;
 
 function MessageBus: IMessageBus;
 begin
@@ -341,8 +343,17 @@ begin
   Result := SingletonMessageBus;
 end;
 
+function ThreadEngine: IThreadEngine;
+begin
+  if not assigned(SingletonThreadEngine) then begin
+    SingletonThreadEngine := TCommonThreadEngine.Create;
+  end;
+  Result := SingletonThreadEngine;
+end;
+
 initialization
 
 finalization
   SingletonMessageBus := nil;
+  SingletonThreadEngine := nil;
 end.

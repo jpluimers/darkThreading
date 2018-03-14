@@ -24,20 +24,20 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 //------------------------------------------------------------------------------
-unit dg.threading.threadengine.common;
+unit darkthreading.threadengine.common;
 
 interface
 uses
   System.Generics.Collections,
-  dg.threading.messagebus,
-  dg.threading.enginethread,
-  dg.threading.threadengine;
+  darkthreading.enginethread,
+  darkthreading;
 
 type
   TCommonThreadEngine = class( TInterfacedObject, IThreadEngine )
   private
     fThreads: TList<IEngineThread>;
   private //- IThreadEngine -//
+    procedure InstallSubsystem( ThreadIndex: uint32; aSubSystem: ISubSystem );
     function getThreadCount: uint32;
     function getThread( idx: uint32 ): IEngineThread;
     procedure Run;
@@ -50,9 +50,9 @@ type
 
 implementation
 uses
-  dg.threading.enginethread.common,
-  dg.threading.enginethread.ui.common,
-  dg.threading.messagebus.common;
+  darkthreading.enginethread.common,
+  darkthreading.enginethread.ui.common,
+  darkthreading.messagebus.common;
 
 { TThreadEngine }
 
@@ -65,7 +65,7 @@ begin
   inherited Create;
   fThreads := TList<IEngineThread>.Create;
   //- Create and add the UI thread.
-  aThread := dg.threading.enginethread.ui.common.TCommonEngineThread.Create;
+  aThread := TCommonEngineThread.Create;
   fThreads.Add(AThread);
   //- Create ancillary threads
   if ThreadCount=0 then begin
@@ -77,7 +77,7 @@ begin
     exit;
   end;
   for idx := 0 to pred(NoThreads) do begin
-    aThread := dg.threading.enginethread.common.TCommonEngineThread.Create;
+    aThread := TCommonEngineThread.Create;
     fThreads.Add(AThread);
   end;
 end;
@@ -97,6 +97,11 @@ end;
 function TCommonThreadEngine.getThreadCount: uint32;
 begin
   Result := fThreads.Count;
+end;
+
+procedure TCommonThreadEngine.InstallSubsystem(ThreadIndex: uint32; aSubSystem: ISubSystem);
+begin
+  fThreads[ThreadIndex].InstallSubsystem(aSubsystem);
 end;
 
 procedure TCommonThreadEngine.Run;
