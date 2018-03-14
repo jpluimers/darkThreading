@@ -24,12 +24,11 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 //------------------------------------------------------------------------------
-unit dg.threading.messagepipe.common;
+unit darkthreading.messagepipe.common;
 
 interface
 uses
-  dg.threading.types,
-  dg.threading.messagepipe;
+  darkthreading;
 
 type
   {$A8} //- Align 8-byte boundary for atomic read/write of fPushIndex and fPullIndex.

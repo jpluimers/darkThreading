@@ -24,16 +24,14 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 //------------------------------------------------------------------------------
-unit dg.threading.messagechannel.windows;
+unit darkthreading.messagechannel.windows;
 
 interface
 uses
   Windows,
   system.syncobjs,
-  dg.threading.types,
-  dg.threading.messagepipe,
-  dg.threading.messagechannel,
-  dg.threading.messagechannel.common;
+  darkthreading,
+  darkthreading.messagechannel.common;
 
 
 type

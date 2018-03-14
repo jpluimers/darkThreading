@@ -24,16 +24,14 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 //------------------------------------------------------------------------------
-unit dg.threading.messagechannel.posix;
+unit darkthreading.messagechannel.posix;
 
 interface
 uses
   system.syncobjs,
   Posix.SysTypes,
-  dg.threading.types,
-  dg.threading.messagepipe,
-  dg.threading.messagechannel,
-  dg.threading.messagechannel.common;
+  darkthreading,
+  darkthreading.messagechannel.common;
 
 
 type

@@ -24,15 +24,12 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 //------------------------------------------------------------------------------
-unit dg.threading.messagebus.common;
+unit darkthreading.messagebus.common;
 
 interface
 uses
   system.generics.collections,
-  dg.threading.types,
-  dg.threading.messagepipe,
-  dg.threading.messagechannel,
-  dg.threading.messagebus;
+  darkthreading;
 
 type
   TCommonMessageBus = class( TInterfacedObject, IMessageBus )
@@ -57,7 +54,7 @@ type
 implementation
 uses
   sysutils,
-  dg.threading.messagechannel.common;
+  darkthreading.messagechannel.common;
 
 { TMessageBus }
 

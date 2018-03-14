@@ -24,14 +24,12 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 //------------------------------------------------------------------------------
-unit dg.threading.messagechannel.common;
+unit darkthreading.messagechannel.common;
 
 interface
 uses
   system.generics.collections,
-  dg.threading.types,
-  dg.threading.messagepipe,
-  dg.threading.messagechannel;
+  darkthreading;
 
 type
   TCommonMessageChannel = class( TInterfacedObject, IMessageChannel )
@@ -58,7 +56,7 @@ type
 implementation
 uses
   sysutils,
-  dg.threading.messagepipe.common;
+  darkthreading.messagepipe.common;
 
 { TMessageChannel }
 
