@@ -27,6 +27,7 @@
 unit darkthreading.messagechannel.posix;
 
 interface
+{$ifndef MSWINDOWS}
 uses
   system.syncobjs,
   Posix.SysTypes,
@@ -57,8 +58,9 @@ type
     destructor Destroy; override;
   end;
 
-
+{$endif}
 implementation
+{$ifndef MSWINDOWS}
 uses
   Posix.pthread,
   sysutils;
@@ -201,4 +203,5 @@ begin
   pthread_cond_signal(fResponseSignal);
 end;
 
+{$endif}
 end.

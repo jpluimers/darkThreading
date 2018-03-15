@@ -24,12 +24,12 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 //------------------------------------------------------------------------------
-unit dg.threading.threadengine;
+unit darkthreading.threadengine;
 
 interface
 uses
-  dg.threading.messagebus,
-  dg.threading.enginethread;
+  darkthreading,
+  darkthreading.enginethread;
 
 type
 

@@ -338,7 +338,11 @@ var
 function MessageBus: IMessageBus;
 begin
   if not assigned(SingletonMessageBus) then begin
-    SingletonMessageBus := TMessageBus.Create;
+    {$ifdef MSWINDOWS}
+    SingletonMessageBus := TWindowsMessageBus.Create;
+    {$else}
+    SingletonMessageBus := TPosixMessageBus.Create;
+    {$endif}
   end;
   Result := SingletonMessageBus;
 end;

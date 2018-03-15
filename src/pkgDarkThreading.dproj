@@ -6,7 +6,7 @@
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Android</Platform>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <TargetedPlatforms>1247</TargetedPlatforms>
         <AppType>Package</AppType>
     </PropertyGroup>
@@ -170,6 +170,19 @@
         </DelphiCompile>
         <DCCReference Include="rtl.dcp"/>
         <DCCReference Include="api\darkThreading.pas"/>
+        <DCCReference Include="implementation\common\darkthreading.messagebus.common.pas"/>
+        <DCCReference Include="implementation\common\darkthreading.messagechannel.common.pas"/>
+        <DCCReference Include="implementation\common\darkthreading.messagepipe.common.pas"/>
+        <DCCReference Include="implementation\common\darkthreading.threadengine.common.pas"/>
+        <DCCReference Include="implementation\common\darkthreading.threadmethod.common.pas"/>
+        <DCCReference Include="implementation\common\darkthreading.enginethread.common.pas"/>
+        <DCCReference Include="implementation\common\darkthreading.enginethread.ui.common.pas"/>
+        <DCCReference Include="implementation\posix\darkthreading.messagechannel.posix.pas"/>
+        <DCCReference Include="implementation\posix\darkthreading.messagebus.posix.pas"/>
+        <DCCReference Include="implementation\windows\darkthreading.messagechannel.windows.pas"/>
+        <DCCReference Include="implementation\windows\darkthreading.messagebus.windows.pas"/>
+        <DCCReference Include="interfaces\darkthreading.threadengine.pas"/>
+        <DCCReference Include="interfaces\darkthreading.enginethread.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

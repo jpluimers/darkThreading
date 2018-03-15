@@ -27,26 +27,29 @@
 unit darkthreading.messagebus.posix;
 
 interface
+{$ifndef MSWINDOWS}
 uses
   darkthreading,
   darkthreading.messagebus.common;
 
 type
-  TMessageBus = class( TCommonMessageBus, IMessageBus )
+  TPosixMessageBus = class( TCommonMessageBus, IMessageBus )
   protected
     function NewMessageChannel( ChannelName: string ): IMessageChannel; override;
   end;
 
-
+{$endif}
 implementation
+{$ifndef MSWINDOWS}
 uses
   darkthreading.messagechannel.posix;
 
 { TMessageBus }
 
-function TMessageBus.NewMessageChannel(ChannelName: string): IMessageChannel;
+function TPosixMessageBus.NewMessageChannel(ChannelName: string): IMessageChannel;
 begin
   Result := TMessageChannel.Create(ChannelName);
 end;
 
+{$endif}
 end.

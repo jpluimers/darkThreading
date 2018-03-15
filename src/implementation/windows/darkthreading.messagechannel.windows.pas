@@ -27,6 +27,7 @@
 unit darkthreading.messagechannel.windows;
 
 interface
+{$ifdef MSWINDOWS}
 uses
   Windows,
   system.syncobjs,
@@ -56,8 +57,9 @@ type
     constructor Create( aName: string ); reintroduce;
   end;
 
-
+{$endif}
 implementation
+{$ifdef MSWINDOWS}
 uses
   Sysutils;
 
@@ -186,4 +188,5 @@ begin
   WakeConditionVariable(fResponseSignal);
 end;
 
+{$endif}
 end.

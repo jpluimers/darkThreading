@@ -27,26 +27,29 @@
 unit darkthreading.messagebus.windows;
 
 interface
+{$ifdef MSWINDOWS}
 uses
   darkthreading,
   darkthreading.messagebus.common;
 
 type
-  TMessageBus = class( TCommonMessageBus, IMessageBus )
+  TWindowsMessageBus = class( TCommonMessageBus, IMessageBus )
   protected
     function NewMessageChannel( ChannelName: string ): IMessageChannel; override;
   end;
 
-
+{$endif}
 implementation
+{$ifdef MSWINDOWS}
 uses
   darkthreading.messagechannel.windows;
 
 { TMessageBus }
 
-function TMessageBus.NewMessageChannel(ChannelName: string): IMessageChannel;
+function TWindowsMessageBus.NewMessageChannel(ChannelName: string): IMessageChannel;
 begin
   Result := TMessageChannel.Create(ChannelName);
 end;
 
+{$endif}
 end.
