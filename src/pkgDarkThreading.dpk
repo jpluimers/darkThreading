@@ -44,7 +44,6 @@ contains
   darkthreading.messagechannel.windows in 'implementation\windows\darkthreading.messagechannel.windows.pas',
   darkthreading.messagebus.windows in 'implementation\windows\darkthreading.messagebus.windows.pas',
   darkthreading.threadengine in 'interfaces\darkthreading.threadengine.pas',
-  darkthreading.enginethread in 'interfaces\darkthreading.enginethread.pas',
-  darkThreading.ringbuffer in 'api\darkThreading.ringbuffer.pas';
+  darkthreading.enginethread in 'interfaces\darkthreading.enginethread.pas';
 
 end.
