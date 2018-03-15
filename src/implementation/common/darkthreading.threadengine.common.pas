@@ -39,7 +39,6 @@ type
   private //- IThreadEngine -//
     procedure InstallSubsystem( ThreadIndex: uint32; aSubSystem: ISubSystem );
     function getThreadCount: uint32;
-    function getThread( idx: uint32 ): IEngineThread;
     procedure Run;
   public
     // If thread count is zero, or the parameter omitted, the thread engine
@@ -65,7 +64,7 @@ begin
   inherited Create;
   fThreads := TList<IEngineThread>.Create;
   //- Create and add the UI thread.
-  aThread := TCommonEngineThread.Create;
+  aThread := TCommonUIEngineThread.Create;
   fThreads.Add(AThread);
   //- Create ancillary threads
   if ThreadCount=0 then begin
@@ -87,11 +86,6 @@ begin
   fThreads.Clear;
   fThreads.DisposeOf;
   inherited Destroy;
-end;
-
-function TCommonThreadEngine.getThread(idx: uint32): IEngineThread;
-begin
-  Result := fThreads[idx];
 end;
 
 function TCommonThreadEngine.getThreadCount: uint32;

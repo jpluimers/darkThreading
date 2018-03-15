@@ -33,7 +33,7 @@ uses
   darkthreading.enginethread;
 
 type
-  TCommonEngineThread = class( TInterfacedObject, IEngineThread )
+  TCommonUIEngineThread = class( TInterfacedObject, IEngineThread )
   private
     fStarted: boolean;
     fSubSystems: TList<ISubSystem>;
@@ -53,7 +53,7 @@ uses
 
 { TEngineThread }
 
-procedure TCommonEngineThread.InstallSubsystem(aSubSystem: ISubSystem);
+procedure TCommonUIEngineThread.InstallSubsystem(aSubSystem: ISubSystem);
 begin
   if fStarted then begin
     exit;
@@ -62,20 +62,20 @@ begin
   aSubsystem.Install;
 end;
 
-constructor TCommonEngineThread.Create;
+constructor TCommonUIEngineThread.Create;
 begin
   inherited Create;
   fStarted := False;
   fSubSystems := TList<ISubSystem>.Create;
 end;
 
-destructor TCommonEngineThread.Destroy;
+destructor TCommonUIEngineThread.Destroy;
 begin
   fSubSystems.DisposeOf;
   inherited Destroy;
 end;
 
-function TCommonEngineThread.Execute: boolean;
+function TCommonUIEngineThread.Execute: boolean;
 var
   idx: uint32;
 begin
@@ -92,7 +92,7 @@ begin
   Result := True;
 end;
 
-procedure TCommonEngineThread.Start;
+procedure TCommonUIEngineThread.Start;
 var
   idx: uint32;
 begin

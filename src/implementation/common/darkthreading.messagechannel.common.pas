@@ -120,7 +120,7 @@ end;
 
 function TCommonMessageChannel.Pull(var aMessage: TMessage; WaitFor: boolean): boolean;
 var
-  idx: int32;
+  idx: uint32;
 begin
   Result := False;
   if fPipes.Count=0 then begin
