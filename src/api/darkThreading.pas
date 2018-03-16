@@ -30,334 +30,286 @@ interface
 
 type
   ///  <summary>
-  ///    Represents a connection to a message channel for sending
-  ///    messages.
+  ///    The thread execute method callback, used by IThreadMethod.
   ///  </summary>
-  THChannelConnection = uint32;
+  TThreadExecuteMethod = function(): boolean of object;
 
   ///  <summary>
-  ///     This record is returned from a call to SendMessage() to indicate
-  ///     if the message was successfully sent, and to return any response
-  ///     value.
+  ///    IThreadMethod represents a long running thread, which will
+  ///    repeatedly call an external execute method, until that method
+  ///    returns false.
   ///  </summary>
-  TMessageResponse = record
-    Sent: boolean;
-    ParamA: NativeUInt;
-    ParamB: NativeUInt;
-  end;
-
-  ///  <summary>
-  ///    A record type representing a communication message between
-  ///    subsystems.
-  ///  </summary>
-  PMessage = ^TMessage;
-  TMessage = record
-    MessageValue: uint32;
-    ParamA: NativeUInt;
-    ParamB: NativeUInt;
-    Original: PMessage;
-    Handled: Boolean;
-    LockResponse: procedure of object;
-    UnlockResponse: procedure of object;
-  end;
-
-
-type
-
-  /// <summary>
-  ///   An implementation of IMessagePipe provides a thread-safe unidirectional
-  ///   mechanism for sending messages between two threads. Each pipe may have
-  ///   a single originator thread and a single target thread, and messages
-  ///   flow from the originator to the target.
-  /// </summary>
-  /// <remarks>
-  ///   The DarkGlass engine provides IMessageChannel and IMessageBus to
-  ///   aggregate multiple pipes, allowing for bidirectional communication
-  ///   among multiple originators and targets. The IMessagePipe is the
-  ///   lowest-level primitive of this communications system, providing
-  ///   lock-less communication between a single originator and a single target
-  ///   which may exist on different execution threads.
-  /// </remarks>
-  IMessagePipe = interface
-    ['{B8FE0D89-B21F-4352-B7FE-F96A335F6EBE}']
-
-
-    /// <summary>
-    ///   The originator inserts messages into the pipe by calling the Push()
-    ///   method.
-    /// </summary>
-    /// <param name="aMessage">
-    ///   A TMessage structure containing the message information to be sent to
-    ///   the target.
-    /// </param>
-    /// <returns>
-    ///   Returns true if the message is successfully inserted into the pipe
-    ///   (does not indicate that the message is retrieved from the pipe by the
-    ///   target). If this method returns false, it is likely that the pipe is
-    ///   full, and a re-try later may be successful.
-    /// </returns>
-    function Push( aMessage: TMessage ): boolean;
-
-    /// <summary>
-    ///   The Pull() method is polled by the message target, and retreieves
-    ///   messages from the pipe which were previously inserted by the
-    ///   originator calling the Push() method.
-    /// </summary>
-    /// <param name="aMessage">
-    ///   A TMessage structure to be populated with a message from the pipe.
-    /// </param>
-    /// <returns>
-    ///   If there is a message in the pipe to be returned, the aMessage
-    ///   parameter is populated and this method returns true. Otherwise, if
-    ///   the pipe is empty, this method returns false.
-    /// </returns>
-    function Pull( var aMessage: TMessage ): boolean;
-  end;
-
-type
-  ///  <summary>
-  ///    A procedure callback for handling messages from the channel.
-  ///  </summary>
-  TMessageHandlerProc = procedure ( MessageValue: uint32; var ParamA: NativeUInt; var ParamB: NativeUInt; var Handled: boolean ) of object;
-
-  /// <summary>
-  ///   An implementation of IMessageChannel provides a named mechanism for
-  ///   delivering messages to a sub-system. A message channel is a collection
-  ///   of message pipes, where each message pipe facilitates communication
-  ///   between one originator sub-system, and the target subsystem which owns
-  ///   the channel.
-  /// </summary>
-  /// <remarks>
-  ///   As an abstract example, there may be a sub-system responsible for
-  ///   playing audio files, which owns a message channel named 'audio'. Every
-  ///   sub-system which wishes to send messages to the audio sub-system, must
-  ///   acquire a pipe from the 'audio' channel, and may then send messages
-  ///   into that pipe, for the audio sub-system to receive.
-  /// </remarks>
-  IMessageChannel = interface
-    ['{E72DE502-E6B9-49B9-829C-964587A555D4}']
+  IThreadMethod = interface
+    ['{FB86E522-F520-4496-AC08-CAAE6FA0C11A}']
 
     ///  <summary>
-    ///    Returns the name of this message channel.
+    ///    Returns a reference to the method to be executed.
     ///  </summary>
-    function getName: string;
+    function getExecuteMethod: TThreadExecuteMethod;
 
     ///  <summary>
+    ///    Sets the reference for the method to be executed.
     ///  </summary>
-    function ProcessMessages( MessageHandler: TMessageHandlerProc; WaitFor: Boolean = False ): boolean;
-
-    /// <summary>
-    ///    Pushes a message into the message channel using the pipe associated
-    ///    with the message originator thread.
-    /// </summary>
-    function Push( Pipe: IMessagePipe; MessageValue: uint32; ParamA: NativeUInt; ParamB: NativeUInt; WaitFor: Boolean = False ): TMessageResponse;
-
-    /// <summary>
-    ///   Returns a handle to a message pipe, which the calling thread may
-    ///   use to inject messages into this channel.
-    /// </summary>
-    /// <returns>
-    ///   Returns a handle to the message pipe.
-    /// </returns>
-    /// <remarks>
-    ///   Each originating sub-system must call this method to obtain it's own
-    ///   dedicated message pipe handle for this channel. Pipes are only
-    //    thread-safe between two threads, the originator and the target,
-    //    they may not be shared between multiple originators.
-    /// </remarks>
-    function getPipe: IMessagePipe;
-
-    // - Pascal Only, Property -//
-
-    ///  <summary>
-    ///    Returns the name of this message channel.
-    ///  </summary>
-    property Name: string read getName;
-  end;
-
-type
-  /// <summary>
-  ///   Implement the ISubSystem interface to provide functionality to be
-  ///   executed by the threading system. <br /><br />ISubSystem represents a
-  ///   sub-system executing within a thread. Sub-systems operate
-  ///   cooperatively, in that the thread will call their execute method
-  ///   repeatedly for the life of the thread, and the execute method is
-  ///   expected to return execution to the thread. An implementation of
-  ///   ISubSystem should not enter long running loops within it's Execute
-  ///   method.
-  /// </summary>
-  ISubSystem = interface
-  ['{37CF5CD7-EB5E-4FD5-A46B-A123EFC71870}']
-
-
-    /// <summary>
-    ///   The Install method is called by it's executing thread as the
-    ///   sub-system is installed into that thread. A reference to the message
-    ///   bus is provided so that the sub-system can create any message
-    ///   channels it requires. *Note, this is an opportunity to create new
-    ///   message channels for the sub-system, but is too early to acquire
-    ///   pipes to other sub-systems. Acquiring pipes should be done within the
-    ///   implementtion of the Initialize method.
-    /// </summary>
-    /// <param name="MessageBus">
-    ///   A reference to the global message bus, through which sub-systems
-    ///   communicate.
-    /// </param>
-    procedure Install;
-
-    /// <summary>
-    ///   The initialize method is called by the execution thread immediately
-    ///   before the thread begins calling the execute method of the
-    ///   sub-system. This is an opportunity for the sub-system to allocate
-    ///   memory and acquire message pipes to communicate with other
-    ///   sub-systems. Note* References to any message pipes acquired here
-    ///   should be retained for use during execution, there is no later
-    ///   opporunity to acquire new message pipes (this would violate the
-    ///   thread-safety of the messaging system, which is lose to enable
-    ///   lock-less threading).
-    /// </summary>
-    function Initialize: boolean;
-
-    /// <summary>
-    ///   The execute() method will be called repeatedly by the execution
-    ///   thread into which this sub-system is installed. The execute method is
-    ///   expected to return execution as quickly as possible, as it
-    ///   co-operates in a round-robin with other sub-systems installed into
-    ///   the same thread.
-    /// </summary>
-    /// <returns>
-    ///   The execute method should return true so long as it needs to continue
-    ///   running. When the execute method returns false, the executing thread
-    ///   will uninstall and finalize the sub-system.
-    /// </returns>
-    function Execute: boolean;
-
-
-    /// <summary>
-    ///   The finalize method is called by the execute thread as the sub-system
-    ///   is uninstalled from the thread. This is an opportunity for the
-    ///   sub-system to free up resources that were allocated during it's
-    ///   initialization or execution.
-    /// </summary>
-    procedure Finalize;
-  end;
-
-type
-  /// <summary>
-  ///   IThreadEngine represents a collection of execution threads, including
-  ///   the main thread, each of which host sub-systems for long running
-  ///   operations. The ThreadEngine also provides access to the cross-thread
-  ///   messaging system which allows sub-systems to communicate with each
-  ///   other.
-  /// </summary>
-  IThreadEngine = interface
-    ['{30780107-FED7-4A3B-BF80-742FDE3A8620}']
-
-    /// <summary>
-    ///   Returns the number of execution threads operating within the thread
-    ///   engine, including the main application thread, which is always at
-    ///   index zero.
-    /// </summary>
-    function getThreadCount: uint32;
-
-    /// <summary>
-    ///   Adds a subsystem to the thread. This method will only function before
-    ///   the thread is started.
-    /// </summary>
-    /// <param name="aSubSystem">
-    ///   Pass a reference to the sub-system to be installed into the thread.
-    ///   The sub-system will share execution time with other installed
-    ///   sub-systems.
-    /// </param>
-    procedure InstallSubsystem( ThreadIndex: uint32; aSubSystem: ISubSystem );
-
-    /// <summary>
-    ///   The run method starts all of the execution threads running, including
-    ///   the main thread. <br />The main thread is started after the others,
-    ///   and retains execution until all of it's sub-systems have shut down,
-    ///   at which time it will shut down all other threads and return from
-    ///   this method.
-    /// </summary>
-    procedure Run;
+    procedure setExecuteMethod( value: TThreadExecuteMethod );
 
     //- Pascal Only, Properties -//
+    property ExecuteMethod: TThreadExecuteMethod read getExecuteMethod write setExecuteMethod;
+  end;
+
+  ///  <summary>
+  ///    Represents a mutex lock which may be used to protect a critical
+  ///    section of code, which must be executed by only one thread at any
+  ///    time.
+  ///  </summary>
+  ICriticalSection = interface
+    ['{21F4E11C-C165-4473-82C0-1674EBD90678}']
+
+    ///  <summary>
+    ///    Acquire the mutex lock. A thread should call this to ensure that
+    ///    it is executing exclusively.
+    ///  </summary>
+    procedure Acquire;
+
+    ///  <summary>
+    ///    Release the mutex lock. A thread calls this method to release it's
+    ///    exclusive execution.
+    ///  </summary>
+    procedure Release;
+  end;
+
+
+  ///  <summary>
+  ///    Represents a critical section controlled by a condition variable.
+  ///    This works in the same way as an ICriticalSection, except that a
+  ///    thread can put it's self to sleep (releasing the mutex), until it
+  ///    is woken by an external signal from another thread. Once woken the
+  ///    thread re-aquires the mutex lock and continues execution.
+  ///  </summary>
+  ISignaledCriticalSection = interface
+    ///  <summary>
+    ///    Acquire the mutex lock. A thread should call this to ensure that
+    ///    it is executing exclusively.
+    ///  </summary>
+    procedure Acquire;
+
+    ///  <summary>
+    ///    Release the mutex lock. A thread calls this method to release it's
+    ///    exclusive execution.
+    ///  </summary>
+    procedure Release;
+
+    ///  <summary>
+    ///    Puts the calling thread to release the mutex lock and begin
+    ///    sleeping. While sleeping, the calling thread is excluded from the
+    ///    thread scheduler, allowing other threads to consume it's runtime.
+    ///    <remarks>
+    ///      Sleep may return at any time, regardless of the work having been
+    ///      completed. You should check that the work has actually been
+    ///      completed, and if not, put the signaled critical seciton back
+    ///      to sleep.
+    ///    </remarks>
+    ///  </summary>
+    procedure Sleep;
+
+    ///  <summary>
+    ///    Called by some external thread, Wake causes the sleeping thread to
+    ///    re-aquire the mutex lock and to continue executing.
+    ///  </summary>
+    procedure Wake;
+  end;
+
+  /// <summary>
+  ///   An implementation of IAtomicRingBuffer provides a buffer of items which
+  ///   may be exchanged between two threads. Atomic variables are used to
+  ///   marshal the sharing of data between threads. <br /><br />Only two
+  ///   threads may use the ring buffer during it's life-cycle. One thread (the
+  ///   producer) is able to push items into the buffer, and the other thread
+  ///   (the consumer) is able to pull items out of the buffer.
+  /// </summary>
+  /// <remarks>
+  ///   <b>CAUTION -</b> There is no mechanism to prevent the consumer thread
+  ///   from calling the push() method, nor the producer thread from calling
+  ///   the pull() method. There is also no mechanism to prevent threads other
+  ///   than the producer and consumer from calling these methods. It is your
+  ///   responsibility to ensure that only one producer, and one consumer
+  ///   thread calls the respective methods.
+  /// </remarks>
+  IAtomicRingBuffer<T: record> = interface
+    ['{6681F3CF-CF51-4312-816C-3E173F57C2CB}']
 
     /// <summary>
-    ///   Returns the number of execution threads operating within the thread
-    ///   engine, including the main application thread, which is always at
-    ///   index zero.
+    ///   The producer thread may call Push() to add an item to the
+    ///   IAtomicRingBuffer.
     /// </summary>
-    property ThreadCount: uint32 read getThreadCount;
+    /// <param name="item">
+    ///   The item to be added to the ring buffer. <br />
+    /// </param>
+    /// <returns>
+    ///   Returns true if the item is successfully inserted into the ring
+    ///   buffer, however, this does not indicate that the message has been
+    ///   retrieved by the consumer thread. <br />If this method returns false,
+    ///   the buffer is full. An unsuccessful push operation can be retried and
+    ///   will be successful if the consumer thread has called Pull() to free
+    ///   up space for a new item in the buffer.
+    /// </returns>
+    /// <remarks>
+    ///   The item will be copied during the push operation, permitting the
+    ///   producer thread to dispose the memory after calling push.
+    /// </remarks>
+    function Push( item: T ): boolean;
 
+    /// <summary>
+    ///   The Pull() method is called by the consumer thread to retrieve an
+    ///   item from the ring buffer.
+    /// </summary>
+    /// <param name="item">
+    ///   Passed by reference, item will be set to match the next item in the
+    ///   buffer.
+    /// </param>
+    /// <returns>
+    ///   If there is an item in the ring buffer to be retrieved, this method
+    ///   will return true. <br />If the method returns false, the buffer is
+    ///   empty, a retry may be successful if the producer thread has pushed a
+    ///   new item into the buffer.
+    /// </returns>
+    function Pull( var item: T ): boolean;
   end;
 
-
-type
   /// <summary>
-  ///   An implementation of IMessageBus represents a collection of named
-  ///   communications channels across one or more sub-systems.
+  ///   Implements IAtomicRingBuffer&lt;T: record&gt;
   /// </summary>
-  IMessageBus = interface
-    ['{CAB3C192-2164-4BDB-BAD9-4F087C1BB7A4}']
+  /// <typeparam name="T">
+  ///   A record datatype (or non-object)
+  /// </typeparam>
+  TAtomicRingBuffer<T: record> = class( TInterfacedObject, {$ifdef fpc} specialize {$endif} IAtomicRingBuffer<T> )
+  private
+    fPushIndex: uint32;
+    fPullIndex: uint32;
+    fItems: array of T;
+  private //- IAtomicRingBuffer -//
+    /// <exclude />
+    function Push( item: T ): boolean;
+    /// <exclude />
+    function Pull( var item: T ): boolean;
+  public
 
-    ///  <summary>
-    ///    Called by a subsystem during initialization, to add it's message
-    ///    channel to the bus.
-    ///  </summary>
-    function CreateMessageChannel( name: string ): IMessageChannel;
-
-    ///  <summary>
-    ///    Called by a subsystem during initialization, to get a connection
-    ///    to a message channel for sending messages. Each thread must have
-    ///    it's own connection to the channel.
-    ///  </summary>
-    function GetConnection( ChannelName: string ): THChannelConnection;
-
-    ///  <summary>
-    ///    Sends a message into the message channel, using the given connection handle.
-    ///  </summary>
-    function SendMessage( Connection: THChannelConnection; MessageValue: uint32; ParamA: NativeUInt; ParamB: NativeUInt; WaitFor: Boolean = False ): TMessageResponse;
+    /// <summary>
+    ///   The constructor creates an instance of the atomic ring-buffer with a
+    ///   pre-allocated number of items. By default, 128 items are
+    ///   pre-allocated, set the ItemCount parameter to override this.
+    /// </summary>
+    /// <param name="ItemCount">
+    ///   The number of items to pre-allocate in the buffer.
+    /// </param>
+    constructor Create( ItemCount: uint32 = 128 ); reintroduce;
   end;
 
-function MessageBus: IMessageBus;
-function ThreadEngine: IThreadEngine;
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+type
+  TThreadMethod = class
+  public
+    class function Create: IThreadMethod; static;
+  end;
+
+  TCriticalSection = class
+  public
+    class function Create: ICriticalSection; static;
+  end;
+
+  TSignaledCriticalSection = class
+  public
+    class function Create: ISignaledCriticalSection; static;
+  end;
 
 implementation
 uses
-  darkthreading.threadengine.common,
-{$ifdef MSWINDOWS}
-  darkthreading.messagebus.windows;
-{$else}
-  darkthreading.messagebus.posix;
-{$endif}
+  {$ifdef MSWINDOWS}
+  darkthreading.threadmethod.windows,
+  darkthreading.signaledcriticalsection.windows,
+  darkthreading.criticalsection.windows;
+  {$else}
+  darkthreading.threadmethod.posix,
+  darkthreading.signaledcriticalsection.posix,
+  darkthreading.criticalsection.posix;
+  {$endif}
 
+{ TThreadMethod }
+
+class function TThreadMethod.Create: IThreadMethod;
+begin
+  {$ifdef MSWINDOWS}
+  Result := TWindowsThreadMethod.Create;
+  {$else}
+  Result := TPosixThreadMethod.Create;
+  {$endif}
+end;
+
+{ TCriticalSection }
+
+class function TCriticalSection.Create: ICriticalSection;
+begin
+  {$ifdef MSWINDOWS}
+  Result := TWindowsCriticalSection.Create;
+  {$else}
+  Result := TPosixCriticalSection.Create;
+  {$endif}
+end;
+
+{ TSignaledCriticalSection }
+
+class function TSignaledCriticalSection.Create: ISignaledCriticalSection;
+begin
+  {$ifdef MSWINDOWS}
+  Result := TWindowsSignaledCriticalSection.Create;
+  {$else}
+  Result := TPosixSignaledCriticalSection.Create;
+  {$endif}
+end;
+
+
+constructor TAtomicRingBuffer<T>.Create( ItemCount: uint32 );
+begin
+  inherited Create;
+  fPushIndex := 0;
+  fPullIndex := 0;
+  SetLength(fItems,ItemCount);
+end;
+
+function TAtomicRingBuffer<T>.Pull(var item: T): boolean;
 var
-  SingletonMessageBus: IMessageBus = nil;
-  SingletonThreadEngine: IThreadEngine = nil;
-
-function MessageBus: IMessageBus;
+  NewIndex: uint32;
 begin
-  if not assigned(SingletonMessageBus) then begin
-    {$ifdef MSWINDOWS}
-    SingletonMessageBus := TWindowsMessageBus.Create;
-    {$else}
-    SingletonMessageBus := TPosixMessageBus.Create;
-    {$endif}
+  Result := False;
+  if fPullIndex=fPushIndex then begin
+    exit;
   end;
-  Result := SingletonMessageBus;
+  Move( fItems[fPullIndex], item, sizeof(T) );
+  NewIndex := succ(fPullIndex);
+  if NewIndex>=Length(fItems) then begin
+    NewIndex := 0;
+  end;
+  fPullIndex := NewIndex;
+  Result := True;
 end;
 
-function ThreadEngine: IThreadEngine;
+function TAtomicRingBuffer<T>.Push(item: T): boolean;
+var
+  NewIndex: uint32;
 begin
-  if not assigned(SingletonThreadEngine) then begin
-    SingletonThreadEngine := TCommonThreadEngine.Create;
+  Result := False;
+  NewIndex := succ(fPushIndex);
+  if (NewIndex>=Length(fItems)) then begin
+    NewIndex := 0;
   end;
-  Result := SingletonThreadEngine;
+  if NewIndex=fPullIndex then begin
+    Exit;
+  end;
+  Move( item, fItems[fPushIndex], sizeof(T) );
+  fPushIndex := NewIndex;
+  Result := True;
 end;
 
-initialization
 
-finalization
-  SingletonMessageBus := nil;
-  SingletonThreadEngine := nil;
 end.

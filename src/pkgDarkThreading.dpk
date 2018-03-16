@@ -32,18 +32,11 @@ requires
 
 contains
   darkThreading in 'api\darkThreading.pas',
-  darkthreading.messagebus.common in 'implementation\common\darkthreading.messagebus.common.pas',
-  darkthreading.messagechannel.common in 'implementation\common\darkthreading.messagechannel.common.pas',
-  darkthreading.messagepipe.common in 'implementation\common\darkthreading.messagepipe.common.pas',
-  darkthreading.threadengine.common in 'implementation\common\darkthreading.threadengine.common.pas',
-  darkthreading.threadmethod.common in 'implementation\common\darkthreading.threadmethod.common.pas',
-  darkthreading.enginethread.common in 'implementation\common\darkthreading.enginethread.common.pas',
-  darkthreading.enginethread.ui.common in 'implementation\common\darkthreading.enginethread.ui.common.pas',
-  darkthreading.messagechannel.posix in 'implementation\posix\darkthreading.messagechannel.posix.pas',
-  darkthreading.messagebus.posix in 'implementation\posix\darkthreading.messagebus.posix.pas',
-  darkthreading.messagechannel.windows in 'implementation\windows\darkthreading.messagechannel.windows.pas',
-  darkthreading.messagebus.windows in 'implementation\windows\darkthreading.messagebus.windows.pas',
-  darkthreading.threadengine in 'interfaces\darkthreading.threadengine.pas',
-  darkthreading.enginethread in 'interfaces\darkthreading.enginethread.pas';
+  darkthreading.threadmethod.windows in 'implementation\windows\darkthreading.threadmethod.windows.pas',
+  darkthreading.threadmethod.posix in 'implementation\posix\darkthreading.threadmethod.posix.pas',
+  darkthreading.criticalsection.windows in 'implementation\windows\darkthreading.criticalsection.windows.pas',
+  darkthreading.criticalsection.posix in 'implementation\posix\darkthreading.criticalsection.posix.pas',
+  darkThreading.signaledcriticalsection.windows in 'implementation\windows\darkThreading.signaledcriticalsection.windows.pas',
+  darkthreading.signaledcriticalsection.posix in 'implementation\posix\darkthreading.signaledcriticalsection.posix.pas';
 
 end.

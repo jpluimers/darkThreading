@@ -72,3 +72,4 @@ Linux64
 Win64
 Android
 /src/*.xml
+*.res
