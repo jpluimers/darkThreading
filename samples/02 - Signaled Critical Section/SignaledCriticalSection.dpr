@@ -41,6 +41,8 @@ end;
 
 destructor TMyMultiThreadedClass.Destroy;
 begin
+  fThreadMethodA.Terminate(1001);
+  fThreadMethodB.Terminate(1001);
   fThreadMethodA := nil;
   fThreadMethodB := nil;
   fConsoleCS := nil;

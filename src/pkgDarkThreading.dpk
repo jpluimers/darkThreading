@@ -37,6 +37,7 @@ contains
   darkthreading.criticalsection.windows in 'implementation\windows\darkthreading.criticalsection.windows.pas',
   darkthreading.criticalsection.posix in 'implementation\posix\darkthreading.criticalsection.posix.pas',
   darkThreading.signaledcriticalsection.windows in 'implementation\windows\darkThreading.signaledcriticalsection.windows.pas',
-  darkthreading.signaledcriticalsection.posix in 'implementation\posix\darkthreading.signaledcriticalsection.posix.pas';
+  darkthreading.signaledcriticalsection.posix in 'implementation\posix\darkthreading.signaledcriticalsection.posix.pas',
+  darkThreading.threadpool.standard in 'implementation\standard\darkThreading.threadpool.standard.pas';
 
 end.

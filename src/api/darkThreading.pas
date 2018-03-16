@@ -43,6 +43,11 @@ type
     ['{FB86E522-F520-4496-AC08-CAAE6FA0C11A}']
 
     ///  <summary>
+    ///    Causes the running thread to shut down.
+    ///  </summary>
+    function Terminate( Timeout: uint32 = 25 ): boolean;
+
+    ///  <summary>
     ///    Returns a reference to the method to be executed.
     ///  </summary>
     function getExecuteMethod: TThreadExecuteMethod;
@@ -204,6 +209,44 @@ type
     constructor Create( ItemCount: uint32 = 128 ); reintroduce;
   end;
 
+  /// <exclude />
+  IThreadPool = interface; //- forward declaration for ISubSystem
+
+  ///  <summary>
+  ///    Implement ISubSystem to provide functionality to be executed as part
+  ///    of the thread pool.
+  ///  </summary>
+  ISubSystem = interface
+    ['{00CA7ECE-AD5D-452D-B7C6-40255F5FE8D4}']
+    function Install( ThreadPool: IThreadPool ): boolean;
+    function Initialize( ThreadPool: IThreadPool ): boolean;
+    function Execute: boolean;
+    function Finalize: boolean;
+  end;
+
+  ///  <summary>
+  ///    Manages a pool of processing threads operating on a pool of ISubSystem.
+  ///  </summary>
+  IThreadPool = interface
+    ['{F397A185-FD7E-4748-BA1F-B79D46348F34}']
+
+    ///  <summary>
+    ///    Installs a subsystem into the thread pool.
+    ///    Each sub-system will be given it's own dedicate thread.
+    ///  </summary>
+    function InstallSubSystem( aSubSytem: ISubSystem ): boolean;
+
+    ///  <summary>
+    ///    Start the threads running.
+    ///  </summary>
+    function Start: boolean;
+
+    ///  <summary>
+    ///    Terminates the running threads and disposes the subsystems.
+    ///  </summary>
+    function Stop: boolean;
+  end;
+
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -223,8 +266,14 @@ type
     class function Create: ISignaledCriticalSection; static;
   end;
 
+  TThreadPool = class
+  public
+    class function Create: IThreadPool; static;
+  end;
+
 implementation
 uses
+  darkthreading.threadpool.standard,
   {$ifdef MSWINDOWS}
   darkthreading.threadmethod.windows,
   darkthreading.signaledcriticalsection.windows,
@@ -268,6 +317,10 @@ begin
   {$endif}
 end;
 
+class function TThreadPool.Create: IThreadPool;
+begin
+  Result := darkthreading.threadpool.standard.TThreadPool.Create;
+end;
 
 constructor TAtomicRingBuffer<T>.Create( ItemCount: uint32 );
 begin

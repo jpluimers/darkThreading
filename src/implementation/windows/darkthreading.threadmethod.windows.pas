@@ -41,14 +41,14 @@ type
     fThreadedMethod: TThreadExecuteMethod;
   private
     function getExecuteMethod: TThreadExecuteMethod;
-    procedure setExecuteMethod( value: TThreadExecuteMethod );
-    function WaitFor: boolean;
-    procedure Terminate;
+    function Terminate( Timeout: uint32 = 25 ): boolean;
   protected
+    procedure setExecuteMethod( value: TThreadExecuteMethod );
     function doExecute: uint32;
   public
     constructor Create; reintroduce;
     destructor Destroy; override;
+
   end;
 
 {$endif}
@@ -68,39 +68,34 @@ var
 begin
   inherited Create;
   fTerminated := False;
-  fRunning := True;
   fThreadedMethod := nil;
   Windows.CreateThread(nil,0,@InternalHandler,Self,0,ThreadID);
 end;
 
-function TWindowsThreadMethod.WaitFor: boolean;
+function TWindowsThreadMethod.Terminate( Timeout: uint32 ): boolean;
 var
-  WaitCounter: uint32;
+  Counter: uint32;
 begin
-  Result := False;
-  WaitCounter := 500;
-  while (fRunning) or (WaitCounter>0) do begin
-    Sleep(1);
-    dec(WaitCounter);
+  Result := True;
+  if not fRunning then begin
+    exit;
+  end;
+  fTerminated := True;
+  fThreadedMethod := nil;
+  Counter := Timeout div 1;
+  while (fRunning) and (Counter>0) do begin
+    sleep(1);
+    dec(Counter);
   end;
   Result := not fRunning;
 end;
 
-procedure TWindowsThreadMethod.Terminate;
-begin
-  fTerminated := True;
-end;
-
 destructor TWindowsThreadMethod.Destroy;
 begin
-  if fRunning then begin
-    fTerminated := True;
-    if not WaitFor then begin
-      raise
-        Exception.Create('Failed to terminate thread.');
-    end;
+  if not Terminate( 500 ) then begin
+    raise
+      Exception.Create('Thread did not terminate.');
   end;
-  fThreadedMethod := nil;
   CloseHandle(fHandle);
   inherited Destroy;
 end;
@@ -109,6 +104,7 @@ function TWindowsThreadMethod.doExecute: uint32;
 var
   fTempThreadedMethod: TThreadExecuteMethod;
 begin
+  fRunning := True;
   while not fTerminated do begin
     fTempThreadedMethod := fThreadedMethod;
     if assigned(fTempThreadedMethod) then begin

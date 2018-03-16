@@ -15,6 +15,9 @@
         <Projects Include="samples\03 - Atomic Ring Buffer\AtomicRingBuffer.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="samples\04 - Thread Pool\ThreadPool.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -59,14 +62,23 @@
     <Target Name="AtomicRingBuffer:Make">
         <MSBuild Projects="samples\03 - Atomic Ring Buffer\AtomicRingBuffer.dproj" Targets="Make"/>
     </Target>
+    <Target Name="ThreadPool">
+        <MSBuild Projects="samples\04 - Thread Pool\ThreadPool.dproj"/>
+    </Target>
+    <Target Name="ThreadPool:Clean">
+        <MSBuild Projects="samples\04 - Thread Pool\ThreadPool.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ThreadPool:Make">
+        <MSBuild Projects="samples\04 - Thread Pool\ThreadPool.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="pkgDarkThreading;ThreadMethod;SignaledCriticalSection;AtomicRingBuffer"/>
+        <CallTarget Targets="pkgDarkThreading;ThreadMethod;SignaledCriticalSection;AtomicRingBuffer;ThreadPool"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="pkgDarkThreading:Clean;ThreadMethod:Clean;SignaledCriticalSection:Clean;AtomicRingBuffer:Clean"/>
+        <CallTarget Targets="pkgDarkThreading:Clean;ThreadMethod:Clean;SignaledCriticalSection:Clean;AtomicRingBuffer:Clean;ThreadPool:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="pkgDarkThreading:Make;ThreadMethod:Make;SignaledCriticalSection:Make;AtomicRingBuffer:Make"/>
+        <CallTarget Targets="pkgDarkThreading:Make;ThreadMethod:Make;SignaledCriticalSection:Make;AtomicRingBuffer:Make;ThreadPool:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
