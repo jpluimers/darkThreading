@@ -32,6 +32,16 @@ begin
   end;
 end;
 
+procedure WriteNamedToConsole(Name: string);
+begin
+  ConsoleCS.Acquire;
+  try
+    Writeln(Name + ' Second passed.');
+  finally
+    ConsoleCS.Release;
+  end;
+end;
+
 { TSecondTimer }
 
 constructor TSecondTimer.Create(aName: string);
@@ -44,7 +54,7 @@ function TSecondTimer.Execute: boolean;
 begin
   Result := True;
   Sleep(1000);
-  WriteToConsole( Name + ' Second passed.' );
+  WriteNamedToConsole( Name );
 end;
 
 function TSecondTimer.Finalize: boolean;
@@ -79,7 +89,7 @@ begin
       ThreadPool.InstallSubSystem(TSecondTimer.Create('thread 8:'));
       ThreadPool.Start;
       try
-        Sleep(10000);
+        Sleep(20000);
       finally
         ThreadPool.Stop;
       end;
