@@ -88,7 +88,6 @@ end;
 
 function TMessageBus.GetMessagePipe(ChannelName: string): IMessagePipe;
 var
-  NewChannel: IMessageChannel;
   Dictionary: IMessageChannelDictionary;
   utChannelName: string;
 begin
