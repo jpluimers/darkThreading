@@ -34,6 +34,7 @@ uses
 type
   TThreadPool = class( TInterfacedObject, IThreadPool )
   private
+    fMessageBus: IMessageBus;
     fRunning: boolean;
     fSubSystems: TList<ISubSystem>;
     fThreadMethods: array of IThreadMethod;
@@ -52,6 +53,7 @@ type
 implementation
 uses
   sysutils,
+  darkThreading.messagebus.standard,
 {$ifdef MSWINDOWS}
   darkThreading.threadmethod.windows;
 {$else}
@@ -93,6 +95,7 @@ end;
 constructor TThreadPool.Create;
 begin
   inherited Create;
+  fMessageBus := TMessageBus.Create;
   fSubSystems := TList<ISubsystem>.Create;
   fRunning := False;
   SetLength(fThreadMethods,0);
@@ -123,6 +126,7 @@ begin
   fRunning := False;
   fSubSystems.DisposeOf;
   SetLength(fThreadMethods,0);
+  fMessageBus := nil;
   inherited Destroy;
 end;
 
@@ -151,7 +155,7 @@ begin
     exit;
   end;
   fSubSystems.Add(aSubsystem);
-  Result := aSubSystem.Install( Self );
+  Result := aSubSystem.Install( fMessageBus );
 end;
 
 function TThreadPool.Start: boolean;
@@ -162,7 +166,7 @@ begin
   Result := False;
   InitializeFailed := False;
   for idx := 0 to pred(fSubSystems.Count) do begin
-    if not fSubSystems.Items[idx].Initialize( Self ) then begin
+    if not fSubSystems.Items[idx].Initialize( fMessageBus ) then begin
       InitializeFailed := True;
     end;
   end;

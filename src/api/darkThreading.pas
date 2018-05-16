@@ -104,7 +104,7 @@ type
     procedure Release;
 
     ///  <summary>
-    ///    Puts the calling thread to release the mutex lock and begin
+    ///    Causes the calling thread to release the mutex lock and begin
     ///    sleeping. While sleeping, the calling thread is excluded from the
     ///    thread scheduler, allowing other threads to consume it's runtime.
     ///    <remarks>
@@ -213,13 +213,95 @@ type
   IThreadPool = interface; //- forward declaration for ISubSystem
 
   ///  <summary>
+  ///    Represents a message to be transferred along a message channel/pipe.
+  ///  </summary>
+  TMessage = record
+    Value: nativeuint;
+  end;
+
+  ///  <summary>
+  ///    An implementation of IMessagePipe represents a sender which is able
+  ///    to send message into a message channel.
+  ///  </summary>
+  IMessagePipe = interface
+    ['{0BA78A88-4082-4B7E-BD07-3920CE7440B4}']
+
+    ///  <summary>
+    ///    Sends a message into the message pipe and waits until the message
+    ///    has been handled. If the message returns data in the message
+    ///    parameter, the result will be TRUE otherwise the result will be
+    ///    FALSE.
+    ///  </summary>
+    procedure SendMessage( var aMessage: TMessage );
+
+    ///  <summary>
+    ///    Sends a message into the message pipe.
+    ///    Returns TRUE if the message was successfully sent, otherwise
+    ///    returns FALSE.
+    ///  </summary>
+    function PostMessage( aMessage: TMessage ): boolean;
+
+  end;
+
+  ///  <summary>
+  ///    An implementation of IMessageChannel represents a listener for a
+  ///    channel of messages. The listener may be used by a single thread only.
+  ///    See IMessagePipe for multiple sender.
+  ///  </summary>
+  IMessageChannel = interface
+    ['{69D9504A-3DCC-4294-8D9C-29020D8FB997}']
+
+    ///  <summary>
+    ///    Creates and returns a new instance of IMessagePipe which is able
+    ///    to send messages into the channel.
+    ///  </summary>
+    function GetMessagePipe: IMessagePipe;
+
+    ///  <summary>
+    ///    Checks all message pipes connected to the channel for new incomming
+    ///    messages. This method will block execution and sleep the thread
+    ///    until new messages are available.
+    ///  </summary>
+    procedure GetMessage( var aMessage: TMessage );
+
+    ///  <summary>
+    ///    Checks all message pipes connected to the channel for new incomming
+    ///    messages. If a new message is available, it will be returned in the
+    ///    message parameter, and the return value of the method will be TRUE.
+    ///    I no message is available, this method will return immediately and
+    ///    the return value will be FALSE.
+    ///  </summary>
+    function PeekMessage( var aMessage: TMessage ): boolean;
+  end;
+
+  ///  <summary>
+  ///    Represents the global messaging system between sub-systems within a
+  ///    thread pool.
+  ///  </summary>
+  IMessageBus = interface
+    ['{1C4AB336-BFA5-4A2B-88A3-C79A1CEEFA24}']
+
+    ///  <summary>
+    ///    Create a new message channel.
+    ///    Channel name must be unique, or exception will be raised.
+    ///  </summary>
+    function CreateChannel( ChannelName: string ): IMessageChannel;
+
+    ///  <summary>
+    ///    Returns a message pipe which may be used to send messages into the
+    ///    message channel.
+    ///  </summary>
+    function GetMessagePipe( ChannelName: string ): IMessagePipe;
+  end;
+
+  ///  <summary>
   ///    Implement ISubSystem to provide functionality to be executed as part
   ///    of the thread pool.
   ///  </summary>
   ISubSystem = interface
     ['{00CA7ECE-AD5D-452D-B7C6-40255F5FE8D4}']
-    function Install( ThreadPool: IThreadPool ): boolean;
-    function Initialize( ThreadPool: IThreadPool ): boolean;
+    function Install( MessageBus: IMessageBus ): boolean;
+    function Initialize( MessageBus: IMessageBus ): boolean;
     function Execute: boolean;
     function Finalize: boolean;
   end;
