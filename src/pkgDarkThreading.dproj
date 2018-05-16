@@ -91,7 +91,7 @@
         <SanitizedProjectName>pkgDarkThreading</SanitizedProjectName>
         <DCC_BplOutput>..\out\lib\bpl</DCC_BplOutput>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <DCC_UnitSearchPath>implementation\posix;implementation\windows;implementation\common;interfaces;api;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>implementation\posix;implementation\windows;api;..\..\darkCollections\out\lib\$(Platform)\$(Config);..\..\darkIO\out\lib\$(Platform)\$(Config);..\..\darkLog\out\lib\$(Platform)\$(Config);..\..\darkUnicode\out\lib\$(Platform)\$(Config);$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Android)'!=''">
@@ -169,7 +169,6 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="rtl.dcp"/>
-        <DCCReference Include="api\darkThreading.pas"/>
         <DCCReference Include="implementation\windows\darkthreading.threadmethod.windows.pas"/>
         <DCCReference Include="implementation\posix\darkthreading.threadmethod.posix.pas"/>
         <DCCReference Include="implementation\windows\darkthreading.criticalsection.windows.pas"/>
@@ -177,6 +176,11 @@
         <DCCReference Include="implementation\windows\darkThreading.signaledcriticalsection.windows.pas"/>
         <DCCReference Include="implementation\posix\darkthreading.signaledcriticalsection.posix.pas"/>
         <DCCReference Include="implementation\standard\darkThreading.threadpool.standard.pas"/>
+        <DCCReference Include="api\darkThreading.pas"/>
+        <DCCReference Include="implementation\standard\darkThgreading.messaging.internal.pas"/>
+        <DCCReference Include="implementation\standard\darkThreading.messagebus.standard.pas"/>
+        <DCCReference Include="implementation\standard\darkThreading.messagechannel.standard.pas"/>
+        <DCCReference Include="implementation\standard\darkThreading.messagepipe.standard.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

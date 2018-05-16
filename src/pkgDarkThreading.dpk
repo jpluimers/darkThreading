@@ -31,13 +31,17 @@ requires
   rtl;
 
 contains
-  darkThreading in 'api\darkThreading.pas',
   darkthreading.threadmethod.windows in 'implementation\windows\darkthreading.threadmethod.windows.pas',
   darkthreading.threadmethod.posix in 'implementation\posix\darkthreading.threadmethod.posix.pas',
   darkthreading.criticalsection.windows in 'implementation\windows\darkthreading.criticalsection.windows.pas',
   darkthreading.criticalsection.posix in 'implementation\posix\darkthreading.criticalsection.posix.pas',
   darkThreading.signaledcriticalsection.windows in 'implementation\windows\darkThreading.signaledcriticalsection.windows.pas',
   darkthreading.signaledcriticalsection.posix in 'implementation\posix\darkthreading.signaledcriticalsection.posix.pas',
-  darkThreading.threadpool.standard in 'implementation\standard\darkThreading.threadpool.standard.pas';
+  darkThreading.threadpool.standard in 'implementation\standard\darkThreading.threadpool.standard.pas',
+  darkThreading in 'api\darkThreading.pas',
+  darkThgreading.messaging.internal in 'implementation\standard\darkThgreading.messaging.internal.pas',
+  darkThreading.messagebus.standard in 'implementation\standard\darkThreading.messagebus.standard.pas',
+  darkThreading.messagechannel.standard in 'implementation\standard\darkThreading.messagechannel.standard.pas',
+  darkThreading.messagepipe.standard in 'implementation\standard\darkThreading.messagepipe.standard.pas';
 
 end.
