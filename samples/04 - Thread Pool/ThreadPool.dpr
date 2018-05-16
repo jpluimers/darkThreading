@@ -12,8 +12,8 @@ type
   TSecondTimer = class( TInterfacedObject, ISubSystem )
   private
     fName: string;
-    function Install( ThreadPool: IThreadPool ): boolean;
-    function Initialize( ThreadPool: IThreadPool ): boolean;
+    function Install( MessageBus: IMessageBus ): boolean;
+    function Initialize( MessageBus: IMessageBus ): boolean;
     function Execute: boolean;
     function Finalize: boolean;
   public
@@ -62,12 +62,12 @@ begin
   Result := True;
 end;
 
-function TSecondTimer.Initialize(ThreadPool: IThreadPool): boolean;
+function TSecondTimer.Initialize(MessageBus: IMessageBus): boolean;
 begin
   Result := True;
 end;
 
-function TSecondTimer.Install(ThreadPool: IThreadPool): boolean;
+function TSecondTimer.Install(MessageBus: IMessageBus): boolean;
 begin
   Result := True;
 end;
