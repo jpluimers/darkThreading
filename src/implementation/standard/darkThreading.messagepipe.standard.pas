@@ -40,14 +40,16 @@ type
   private //- IMessageRingBuffer -//
     function GetRingBuffer: IPipeRing;
   private //- IMessagePipe -//
-    procedure SendMessage( var aMessage: TMessage );
-    function PostMessage( aMessage: TMessage ): boolean;
+    function SendMessageWait( MessageValue: nativeuint; ParamA: nativeuint = 0; ParamB: nativeuint = 0; ParamC: nativeuint = 0; ParamD: nativeuint = 0 ): nativeuint;
+    function SendMessage( MessageValue: nativeuint; ParamA: nativeuint = 0; ParamB: nativeuint = 0; ParamC: nativeuint = 0; ParamD: nativeuint = 0 ): boolean;
   public
     constructor Create( PushCS: ISignaledCriticalSection; PullCS: ISignaledCriticalSection ); reintroduce;
     destructor Destroy; override;
   end;
 
 implementation
+uses
+  sysutils;
 
 
 { TMessagePipe }
@@ -72,29 +74,45 @@ begin
   Result := fPipeRing;
 end;
 
-function TMessagePipe.PostMessage(aMessage: TMessage): boolean;
+function TMessagePipe.SendMessage(MessageValue: nativeuint; ParamA: nativeuint = 0; ParamB: nativeuint = 0; ParamC: nativeuint = 0; ParamD: nativeuint = 0): boolean;
 var
   aMessageRec: TInternalMessageRecord;
 begin
   aMessageRec.Handled := nil;
-  Move(aMessage,aMessageRec.aMessage,sizeof(TMessage));
+  aMessageRec.Return := nil;
+  aMessageRec.aMessage.Value := MessageValue;
+  aMessageRec.aMessage.ParamA := ParamA;
+  aMessageRec.aMessage.ParamB := ParamB;
+  aMessageRec.aMessage.ParamC := ParamC;
+  aMessageRec.aMessage.ParamD := ParamD;
   Result := fPipeRing.Push(aMessageRec);
   fPushCS.Wake;
 end;
 
-procedure TMessagePipe.SendMessage(var aMessage: TMessage);
+function TMessagePipe.SendMessageWait(MessageValue: nativeuint; ParamA: nativeuint = 0; ParamB: nativeuint = 0; ParamC: nativeuint = 0; ParamD: nativeuint = 0): nativeuint;
 var
   aMessageRec: TInternalMessageRecord;
   Handled: boolean;
 begin
+  Result := 0;
   Handled := False;
   aMessageRec.Handled := @Handled;
-  Move(aMessage,aMessageRec.aMessage,sizeof(TMessage));
-  while not fPipeRing.Push(aMessageRec) do fPushCS.Wake;
-  while not Handled do begin
-    fPullCS.Sleep;
+  aMessageRec.Return := @Result;
+  aMessageRec.aMessage.Value := MessageValue;
+  aMessageRec.aMessage.ParamA := ParamA;
+  aMessageRec.aMessage.ParamB := ParamB;
+  aMessageRec.aMessage.ParamC := ParamC;
+  aMessageRec.aMessage.ParamD := ParamD;
+  while not fPipeRing.Push(aMessageRec) do Sleep(0);
+  fPushCS.Wake;
+  fPullCS.Acquire;
+  try
+    while not Handled do begin
+      fPullCS.Sleep;
+    end;
+  finally
+    fPullCS.Release;
   end;
-  fPullCS.Release;
 end;
 
 end.

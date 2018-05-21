@@ -28,6 +28,7 @@ unit darkThreading.messagechannel.standard;
 
 interface
 uses
+  darkThgreading.messaging.internal,
   darkcollections.types,
   darkThreading;
 
@@ -40,8 +41,9 @@ type
     fPullCS: ISignaledCriticalSection;
   private //- IMessageChannel -//
     function GetMessagePipe: IMessagePipe;
-    procedure GetMessage( var aMessage: TMessage );
-    function PeekMessage( var aMessage: TMessage ): boolean;
+    procedure InternalGetMessage(var aMessageRec: TInternalMessageRecord );
+    procedure GetMessage( Handler: TMessageHandler );
+    function MessagesWaiting: boolean;
   public
     constructor Create; reintroduce;
     destructor Destroy; override;
@@ -50,7 +52,6 @@ type
 implementation
 uses
   darkCollections.list,
-  darkThgreading.messaging.internal,
   darkThreading.messagepipe.standard;
 
 type
@@ -75,16 +76,6 @@ begin
   inherited Destroy;
 end;
 
-procedure TMessageChannel.GetMessage(var aMessage: TMessage);
-begin
-  if not PeekMessage(aMessage) then begin
-    while not PeekMessage(aMessage) do begin
-      fPushCS.Sleep;
-    end;
-    fPushCS.Release;
-  end;
-end;
-
 function TMessageChannel.GetMessagePipe: IMessagePipe;
 var
   NewPipe: IMessagePipe;
@@ -94,13 +85,62 @@ begin
   Result := NewPipe;
 end;
 
-function TMessageChannel.PeekMessage(var aMessage: TMessage): boolean;
+procedure TMessageChannel.GetMessage( Handler: TMessageHandler );
+var
+  aMessageRec: TInternalMessageRecord;
+  ReturnValue: nativeuint;
+begin
+  if not MessagesWaiting then begin
+    fPushCS.Acquire;
+    try
+      while not MessagesWaiting do begin
+        fPushCS.Sleep;
+      end;
+    finally
+      fPushCS.Release;
+    end;
+  end;
+  InternalGetMessage(aMessageRec);
+  if not assigned(Handler) then begin
+    exit;
+  end;
+  ReturnValue := Handler( aMessageRec.aMessage );
+  if assigned(aMessageRec.Return) then begin
+    aMessageRec.Return^ := ReturnValue;
+  end;
+  if assigned(aMessageRec.Handled) then begin
+    aMessageRec.Handled^ := True;
+  end;
+  fPullCS.Wake;
+end;
+
+procedure TMessageChannel.InternalGetMessage(var aMessageRec: TInternalMessageRecord);
 var
   Count: uint32;
   idx: uint32;
   CurrentPipe: IMessagePipe;
   PipeRing: IPipeRing;
-  aMessageRec: TInternalMessageRecord;
+begin
+  Count := IMessagePipeList(fMessagePipes).Count;
+  if Count=0 then begin
+    exit;
+  end;
+  //- Loop through pipes.
+  for idx := 0 to pred(Count) do begin
+    CurrentPipe := IMessagePipeList(fMessagePipes).Items[idx];
+    PipeRing := (CurrentPipe as IMessageRingBuffer).GetRingBuffer;
+    if PipeRing.Pull(aMessageRec) then begin
+      exit;
+    end;
+  end;
+end;
+
+function TMessageChannel.MessagesWaiting: boolean;
+var
+  Count: uint32;
+  idx: uint32;
+  CurrentPipe: IMessagePipe;
+  PipeRing: IPipeRing;
 begin
   Result := False;
   Count := IMessagePipeList(fMessagePipes).Count;
@@ -111,10 +151,9 @@ begin
   for idx := 0 to pred(Count) do begin
     CurrentPipe := IMessagePipeList(fMessagePipes).Items[idx];
     PipeRing := (CurrentPipe as IMessageRingBuffer).GetRingBuffer;
-    if PipeRing.Pull(aMessageRec) then begin
-      Move(aMessageRec.aMessage,aMessage,sizeof(TMessage));
+    if not PipeRing.IsEmpty then begin
       Result := True;
-      exit;
+      Exit;
     end;
   end;
 end;

@@ -178,6 +178,11 @@ type
     ///   new item into the buffer.
     /// </returns>
     function Pull( var item: T ): boolean;
+
+    ///  <summary>
+    ///    Returns true if the ring buffer is currently empy.
+    ///  </summary>
+    function IsEmpty: boolean;
   end;
 
   /// <summary>
@@ -196,6 +201,8 @@ type
     function Push( item: T ): boolean;
     /// <exclude />
     function Pull( var item: T ): boolean;
+    /// <exclude />
+    function IsEmpty: boolean;
   public
 
     /// <summary>
@@ -217,6 +224,10 @@ type
   ///  </summary>
   TMessage = record
     Value: nativeuint;
+    ParamA: nativeuint;
+    ParamB: nativeuint;
+    ParamC: nativeuint;
+    ParamD: nativeuint;
   end;
 
   ///  <summary>
@@ -228,20 +239,25 @@ type
 
     ///  <summary>
     ///    Sends a message into the message pipe and waits until the message
-    ///    has been handled. If the message returns data in the message
-    ///    parameter, the result will be TRUE otherwise the result will be
-    ///    FALSE.
+    ///    has been handled. The message handler may return a result value
+    ///    in the result of this method.
     ///  </summary>
-    procedure SendMessage( var aMessage: TMessage );
+    function SendMessageWait( MessageValue: nativeuint; ParamA: nativeuint = 0; ParamB: nativeuint = 0; ParamC: nativeuint = 0; ParamD: nativeuint = 0 ): nativeuint;
 
     ///  <summary>
     ///    Sends a message into the message pipe.
     ///    Returns TRUE if the message was successfully sent, otherwise
-    ///    returns FALSE.
+    ///    returns FALSE. This method returns immediately and therefore does not
+    ///    wait for a response.
     ///  </summary>
-    function PostMessage( aMessage: TMessage ): boolean;
+    function SendMessage( MessageValue: nativeuint; ParamA: nativeuint = 0; ParamB: nativeuint = 0; ParamC: nativeuint = 0; ParamD: nativeuint = 0 ): boolean;
 
   end;
+
+  ///  <summary>
+  ///    Callback used to handle messages coming from a message channel.
+  ///  </summary>
+  TMessageHandler = function (aMessage: TMessage): nativeuint of object;
 
   ///  <summary>
   ///    An implementation of IMessageChannel represents a listener for a
@@ -262,16 +278,14 @@ type
     ///    messages. This method will block execution and sleep the thread
     ///    until new messages are available.
     ///  </summary>
-    procedure GetMessage( var aMessage: TMessage );
+    procedure GetMessage( Handler: TMessageHandler );
 
     ///  <summary>
     ///    Checks all message pipes connected to the channel for new incomming
-    ///    messages. If a new message is available, it will be returned in the
-    ///    message parameter, and the return value of the method will be TRUE.
-    ///    I no message is available, this method will return immediately and
-    ///    the return value will be FALSE.
+    ///    messages. If a new message is available, MessagesWaiting will return
+    ///    TRUE, otherwise FALSE.
     ///  </summary>
-    function PeekMessage( var aMessage: TMessage ): boolean;
+    function MessagesWaiting: boolean;
   end;
 
   ///  <summary>
@@ -410,6 +424,15 @@ begin
   fPushIndex := 0;
   fPullIndex := 0;
   SetLength(fItems,ItemCount);
+end;
+
+function TAtomicRingBuffer<T>.IsEmpty: boolean;
+begin
+  Result := True;
+  if fPullIndex=fPushIndex then begin
+    exit;
+  end;
+  Result := False;
 end;
 
 function TAtomicRingBuffer<T>.Pull(var item: T): boolean;

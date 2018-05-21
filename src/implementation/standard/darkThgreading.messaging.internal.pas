@@ -34,8 +34,10 @@ type
   ///  Record structure used internally to transport messages on the message
   ///  bus.
   PtrBoolean = ^Boolean;
+  PtrNativeUInt = ^NativeUInt;
   TInternalMessageRecord = record
     Handled: PtrBoolean;
+    Return: PtrNativeUInt;
     aMessage: TMessage;
   end;
 

@@ -71,6 +71,7 @@ var
   Dictionary: IMessageChannelDictionary;
   utChannelName: string;
 begin
+  Result := nil;
   utChannelName := uppercase(trim(ChannelName));
   Dictionary := (fMessageChannels as IMessageChannelDictionary);
   if Dictionary.KeyExists[utChannelName] then begin
@@ -78,6 +79,7 @@ begin
   end;
   NewChannel := TMessageChannel.Create;
   Dictionary.setValueByKey(utChannelName,NewChannel);
+  Result := NewChannel;
 end;
 
 destructor TMessageBus.Destroy;
