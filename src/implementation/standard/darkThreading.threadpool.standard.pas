@@ -42,11 +42,12 @@ type
     procedure CreateThreadMethods;
     procedure DisposeThreadMethods;
   private //- IThreadPool -//
+    function MessageBus: IMessageBus;
     function InstallSubSystem( aSubSystem: ISubSystem ): boolean;
     function Start: boolean;
     function Stop: boolean;
   public
-    constructor Create; reintroduce;
+    constructor Create( WithMessageBus: boolean = true ); reintroduce;
     destructor Destroy; override;
   end;
 
@@ -92,10 +93,14 @@ begin
   Result := fSubSystem.Execute;
 end;
 
-constructor TThreadPool.Create;
+constructor TThreadPool.Create( WithMessageBus: boolean = true );
 begin
   inherited Create;
-  fMessageBus := TMessageBus.Create;
+  if WithMessageBus then begin
+    fMessageBus := TMessageBus.Create;
+  end else begin
+    fMessageBus := nil;
+  end;
   fSubSystems := TList<ISubsystem>.Create;
   fRunning := False;
   SetLength(fThreadMethods,0);
@@ -156,6 +161,11 @@ begin
   end;
   fSubSystems.Add(aSubsystem);
   Result := aSubSystem.Install( fMessageBus );
+end;
+
+function TThreadPool.MessageBus: IMessageBus;
+begin
+  Result := fMessageBus;
 end;
 
 function TThreadPool.Start: boolean;

@@ -327,6 +327,12 @@ type
     ['{F397A185-FD7E-4748-BA1F-B79D46348F34}']
 
     ///  <summary>
+    ///    Returns the message bus which is used to allow sub-modules to
+    ///    communicate with each other.
+    ///  </summary>
+    function MessageBus: IMessageBus;
+
+    ///  <summary>
     ///    Installs a subsystem into the thread pool.
     ///    Each sub-system will be given it's own dedicate thread.
     ///  </summary>
