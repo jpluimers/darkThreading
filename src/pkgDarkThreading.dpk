@@ -42,6 +42,7 @@ contains
   darkThgreading.messaging.internal in 'implementation\standard\darkThgreading.messaging.internal.pas',
   darkThreading.messagebus.standard in 'implementation\standard\darkThreading.messagebus.standard.pas',
   darkThreading.messagechannel.standard in 'implementation\standard\darkThreading.messagechannel.standard.pas',
-  darkThreading.messagepipe.standard in 'implementation\standard\darkThreading.messagepipe.standard.pas';
+  darkThreading.messagepipe.standard in 'implementation\standard\darkThreading.messagepipe.standard.pas',
+  darkThreading.threadsystem.standard in 'implementation\standard\darkThreading.threadsystem.standard.pas';
 
 end.

@@ -34,20 +34,20 @@ uses
 type
   TThreadPool = class( TInterfacedObject, IThreadPool )
   private
-    fMessageBus: IMessageBus;
     fRunning: boolean;
-    fSubSystems: TList<ISubSystem>;
+    fThreads: TList<IPoolThread>;
     fThreadMethods: array of IThreadMethod;
   private
     procedure CreateThreadMethods;
     procedure DisposeThreadMethods;
   private //- IThreadPool -//
-    function MessageBus: IMessageBus;
-    function InstallSubSystem( aSubSystem: ISubSystem ): boolean;
+    function getThreadCount: uint32;
+    function getThread( idx: uint32 ): IPoolThread;
+    function InstallThread( aThread: IPoolThread ): boolean;
     function Start: boolean;
-    function Stop: boolean;
+    procedure Stop;
   public
-    constructor Create( WithMessageBus: boolean = true ); reintroduce;
+    constructor Create; reintroduce;
     destructor Destroy; override;
   end;
 
@@ -68,16 +68,17 @@ type
   TThreadMethod = TPosixThreadMethod;
 {$endif}
 
+type
   TPoolThread = class( TThreadMethod )
   private
-    fSubSystem: ISubSystem;
+    fSubSystem: IPoolThread;
   private
     function InternalExecute: boolean;
   public
-    constructor Create( SubSystem: ISubSystem );
+    constructor Create( SubSystem: IPoolThread );
   end;
 
-constructor TPoolThread.Create(SubSystem: ISubSystem);
+constructor TPoolThread.Create(SubSystem: IPoolThread);
 begin
   inherited Create;
   fSubSystem := SubSystem;
@@ -93,15 +94,10 @@ begin
   Result := fSubSystem.Execute;
 end;
 
-constructor TThreadPool.Create( WithMessageBus: boolean = true );
+constructor TThreadPool.Create;
 begin
   inherited Create;
-  if WithMessageBus then begin
-    fMessageBus := TMessageBus.Create;
-  end else begin
-    fMessageBus := nil;
-  end;
-  fSubSystems := TList<ISubsystem>.Create;
+  fThreads := TList<IPoolThread>.Create;
   fRunning := False;
   SetLength(fThreadMethods,0);
 end;
@@ -113,12 +109,12 @@ begin
   if fRunning then begin
     exit;
   end;
-  if fSubSystems.Count=0 then begin
+  if fThreads.Count=0 then begin
     exit;
   end;
-  SetLength(fThreadMethods,fSubSystems.Count);
-  for idx := 0 to pred(fSubSystems.Count) do begin
-    fThreadMethods[idx] := TPoolThread.Create( fSubSystems.Items[idx] );
+  SetLength(fThreadMethods,fThreads.Count);
+  for idx := 0 to pred(fThreads.Count) do begin
+    fThreadMethods[idx] := TPoolThread.Create( fThreads.Items[idx] );
   end;
   fRunning := True;
 end;
@@ -129,9 +125,8 @@ begin
     Stop;
   end;
   fRunning := False;
-  fSubSystems.DisposeOf;
+  fThreads.DisposeOf;
   SetLength(fThreadMethods,0);
-  fMessageBus := nil;
   inherited Destroy;
 end;
 
@@ -153,19 +148,23 @@ begin
   end;
 end;
 
-function TThreadPool.InstallSubSystem(aSubSystem: ISubSystem): boolean;
+function TThreadPool.getThread(idx: uint32): IPoolThread;
+begin
+  Result := fThreads.Items[idx];
+end;
+
+function TThreadPool.getThreadCount: uint32;
+begin
+  Result := fThreads.Count;
+end;
+
+function TThreadPool.InstallThread(aThread: IPoolThread): boolean;
 begin
   Result := False;
   if fRunning then begin
     exit;
   end;
-  fSubSystems.Add(aSubsystem);
-  Result := aSubSystem.Install( fMessageBus );
-end;
-
-function TThreadPool.MessageBus: IMessageBus;
-begin
-  Result := fMessageBus;
+  fThreads.Add(aThread);
 end;
 
 function TThreadPool.Start: boolean;
@@ -175,38 +174,29 @@ var
 begin
   Result := False;
   InitializeFailed := False;
-  for idx := 0 to pred(fSubSystems.Count) do begin
-    if not fSubSystems.Items[idx].Initialize( fMessageBus ) then begin
+  for idx := 0 to pred(fThreads.Count) do begin
+    if not fThreads.Items[idx].Initialize then begin
       InitializeFailed := True;
     end;
   end;
   if InitializeFailed then begin
     Exit;
   end;
-  Result := True;
+   Result := True;
   CreateThreadMethods;
 end;
 
-function TThreadPool.Stop: boolean;
+procedure TThreadPool.Stop;
 var
   idx: int32;
-  FinalizeFailed: boolean;
 begin
-  Result := False;
   DisposeThreadMethods;
-  if fSubSystems.Count=0 then begin
+  if fThreads.Count=0 then begin
     exit;
   end;
-  FinalizeFailed := False;
-  for idx := 0 to pred(fSubSystems.Count) do begin
-    if not fSubSystems.Items[idx].Finalize then begin
-      FinalizeFailed := True;
-    end;
+  for idx := 0 to pred(fThreads.Count) do begin
+    fThreads.Items[idx].Finalize;
   end;
-  if FinalizeFailed then begin
-    exit;
-  end;
-  Result := True;
 end;
 
 end.

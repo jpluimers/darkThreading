@@ -309,15 +309,27 @@ type
   end;
 
   ///  <summary>
-  ///    Implement ISubSystem to provide functionality to be executed as part
-  ///    of the thread pool.
+  ///    Implement IPoolThread to provide functionality for a thread running
+  ///    within a thread pool (IThreadPool)
   ///  </summary>
-  ISubSystem = interface
-    ['{00CA7ECE-AD5D-452D-B7C6-40255F5FE8D4}']
-    function Install( MessageBus: IMessageBus ): boolean;
-    function Initialize( MessageBus: IMessageBus ): boolean;
+  IPoolThread = interface
+    ['{2806DC0F-ADA9-4C52-B65E-3966CBE3FAA6}']
+
+    ///  <summary>
+    ///    Called by the operating thread as the thread starts up.
+    ///  </summary>
+    function Initialize: boolean;
+
+    ///  <summary>
+    ///    Called repeatedly by the operating thread, so long as execute
+    ///    returns true, and the thread continues running.
+    ///  </summary>
     function Execute: boolean;
-    function Finalize: boolean;
+
+    ///  <summary>
+    ///    Called as the operating thread shuts down.
+    ///  </summary>
+    procedure Finalize;
   end;
 
   ///  <summary>
@@ -327,16 +339,19 @@ type
     ['{F397A185-FD7E-4748-BA1F-B79D46348F34}']
 
     ///  <summary>
-    ///    Returns the message bus which is used to allow sub-modules to
-    ///    communicate with each other.
+    ///    Returns the numnber of IPoolThreads that have been installed.
     ///  </summary>
-    function MessageBus: IMessageBus;
+    function getThreadCount: uint32;
 
     ///  <summary>
-    ///    Installs a subsystem into the thread pool.
-    ///    Each sub-system will be given it's own dedicate thread.
+    ///    Returns one of the pool thread instances by index.
     ///  </summary>
-    function InstallSubSystem( aSubSytem: ISubSystem ): boolean;
+    function getThread( idx: uint32 ): IPoolThread;
+
+    ///  <summary>
+    ///    Installs a thread into the thread pool.
+    ///  </summary>
+    function InstallThread( aSubSytem: IPoolThread ): boolean;
 
     ///  <summary>
     ///    Start the threads running.
@@ -346,9 +361,88 @@ type
     ///  <summary>
     ///    Terminates the running threads and disposes the subsystems.
     ///  </summary>
-    function Stop: boolean;
+    procedure Stop;
+
+    //- Pascal Only, Properties -//
+    property ThreadCount: uint32 read getThreadCount;
+    property Threads[ idx: uint32 ]: IPoolThread read getThread;
   end;
 
+  ///  <summary>
+  ///    Implement IThreadSubsystem to provide functionality to be executed
+  ///    within a thread system (IThreadSystem)
+  ///  </summary>
+  IThreadSubSystem = interface
+    ['{9CBE79FE-CDAA-4D25-A269-F2A199A16E74}']
+
+    ///  <summary>
+    ///    Return true if this thread sub-system must run in the main thread.
+    ///  </summary>
+    function MainThread: boolean;
+
+    ///  <summary>
+    ///    Return true if this thread sub-system must have it's own dedicated
+    ///    thread.
+    ///  </summary>
+    function Dedicated: boolean;
+
+    ///  <summary>
+    ///    The thread system will call this method when the subsystem is
+    ///    first installed. This method is always called by the main thread
+    ///    as it is called before the auxhillary threads are running.
+    ///  </summary>
+    function Install( MessageBus: IMessageBus ): boolean;
+
+    ///  <summary>
+    ///    The operating thread for this thread sub-system will call this
+    ///    method immediately after the thread starts running.
+    ///  </summary>
+    function Initialize( MessageBus: IMessageBus ): boolean;
+
+    ///  <summary>
+    ///    The operating thread for this thread sub-system will call this
+    ///    method repeatedly during the lifetime of the thread. If this
+    ///    method returns true, execution will continue. If this method
+    ///    returns false, then this thread sub-system will be removed from
+    ///    it's operating thread and will no longer be executed.
+    ///  </summary>
+    function Execute: boolean;
+
+    ///  <summary>
+    ///    The operating thread will call this method when the subsystem is
+    ///    being shut down, either because the thread is terminating, or
+    ///    when this thread sub-system returns false from it's execute method.
+    ///  </summary>
+    procedure Finalize;
+  end;
+
+  ///  <summary>
+  ///    Manages a collection of sub-systems to be executed within a pool
+  ///    of threads.
+  ///  </summary>
+  IThreadSystem = interface
+    ['{9C1FB3E1-A9BC-4897-BD01-D5EA2933132D}']
+    ///  <summary>
+    ///    Returns the message bus which is used to allow sub-modules to
+    ///    communicate with each other.
+    ///  </summary>
+    function MessageBus: IMessageBus;
+
+    ///  <summary>
+    ///    Installs a subsystem to be executed by the operating threads.
+    ///    This method may only be called before the thread system starts
+    ///    running.
+    ///  </summary>
+    function InstallSubSystem( aSubSystem: IThreadSubsystem ): boolean;
+
+    ///  <summary>
+    ///    Starts the thread system running. Auxhillary threads are started
+    ///    first, and then the main thread runs. Execution continues until
+    ///    the main thread exits, at which time the Auxhillary threads are
+    ///    also stopped.
+    ///  </summary>
+    procedure Run;
+  end;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -373,9 +467,20 @@ type
     class function Create: IThreadPool; static;
   end;
 
+  TThreadSystem = class
+  public
+    ///  <summary>
+    ///    Creates an instance of IThreadSystem with the specified number of
+    ///    threads. If the threads parameter is omitted or passed as zero,
+    ///    then the number of threads created will be CPUCount * 2.
+    ///  </summary>
+    class function Create( Threads: uint32 = 0 ): IThreadSystem; static;
+  end;
+
 implementation
 uses
   darkthreading.threadpool.standard,
+  darkThreading.threadsystem.standard,
   {$ifdef MSWINDOWS}
   darkthreading.threadmethod.windows,
   darkthreading.signaledcriticalsection.windows,
@@ -475,5 +580,12 @@ begin
   Result := True;
 end;
 
+
+{  TThreadSystem }
+
+class function TThreadSystem.Create( Threads: uint32 = 0 ): IThreadSystem;
+begin
+  Result := darkThreading.threadsystem.standard.TThreadSystem.Create( Threads );
+end;
 
 end.
