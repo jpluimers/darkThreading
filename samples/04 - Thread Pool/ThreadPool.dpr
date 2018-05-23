@@ -9,13 +9,13 @@ var
   ThreadPool: IThreadPool;
 
 type
-  TSecondTimer = class( TInterfacedObject, ISubSystem )
+  TSecondTimer = class( TInterfacedObject, IPoolThread )
   private
     fName: string;
-    function Install( MessageBus: IMessageBus ): boolean;
-    function Initialize( MessageBus: IMessageBus ): boolean;
+  private //- IThreadSubSystem -//
+    function Initialize: boolean;
     function Execute: boolean;
-    function Finalize: boolean;
+    procedure Finalize;
   public
     constructor Create( aName: string ); reintroduce;
   public
@@ -57,17 +57,12 @@ begin
   WriteNamedToConsole( Name );
 end;
 
-function TSecondTimer.Finalize: boolean;
+procedure TSecondTimer.Finalize;
 begin
-  Result := True;
+  //- Nothing to see here, method is required. -//
 end;
 
-function TSecondTimer.Initialize(MessageBus: IMessageBus): boolean;
-begin
-  Result := True;
-end;
-
-function TSecondTimer.Install(MessageBus: IMessageBus): boolean;
+function TSecondTimer.Initialize: boolean;
 begin
   Result := True;
 end;
@@ -78,15 +73,15 @@ begin
     WriteToConsole('Starting up timer threads.');
     ThreadPool := TThreadPool.Create;
     try
-      ThreadPool.InstallSubSystem(TSecondTimer.Create('thread 0:'));
-      ThreadPool.InstallSubSystem(TSecondTimer.Create('thread 1:'));
-      ThreadPool.InstallSubSystem(TSecondTimer.Create('thread 2:'));
-      ThreadPool.InstallSubSystem(TSecondTimer.Create('thread 3:'));
-      ThreadPool.InstallSubSystem(TSecondTimer.Create('thread 4:'));
-      ThreadPool.InstallSubSystem(TSecondTimer.Create('thread 5:'));
-      ThreadPool.InstallSubSystem(TSecondTimer.Create('thread 6:'));
-      ThreadPool.InstallSubSystem(TSecondTimer.Create('thread 7:'));
-      ThreadPool.InstallSubSystem(TSecondTimer.Create('thread 8:'));
+      ThreadPool.InstallThread(TSecondTimer.Create('thread 0:'));
+      ThreadPool.InstallThread(TSecondTimer.Create('thread 1:'));
+      ThreadPool.InstallThread(TSecondTimer.Create('thread 2:'));
+      ThreadPool.InstallThread(TSecondTimer.Create('thread 3:'));
+      ThreadPool.InstallThread(TSecondTimer.Create('thread 4:'));
+      ThreadPool.InstallThread(TSecondTimer.Create('thread 5:'));
+      ThreadPool.InstallThread(TSecondTimer.Create('thread 6:'));
+      ThreadPool.InstallThread(TSecondTimer.Create('thread 7:'));
+      ThreadPool.InstallThread(TSecondTimer.Create('thread 8:'));
       ThreadPool.Start;
       try
         Sleep(20000);

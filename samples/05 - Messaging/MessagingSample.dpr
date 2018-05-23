@@ -14,32 +14,36 @@ const
 
 var
   KeepGoing: boolean;
-  ThreadPool: IThreadPool;
+  ThreadSystem: IThreadSystem;
 
 type
-  TSecondTimer = class( TInterfacedObject, ISubSystem )
+  TSecondTimer = class( TInterfacedObject, IThreadSubSystem )
   private
     fMessageChannel: IMessageChannel;
     fSecondCounter: uint32;
   private
+    function MainThread: boolean;
+    function Dedicated: boolean;
     function Install( MessageBus: IMessageBus ): boolean;
     function Initialize( MessageBus: IMessageBus ): boolean;
     function Execute: boolean;
-    function Finalize: boolean;
+    procedure Finalize;
   private
     function MessageHandler(aMessage: TMessage): nativeuint;
   public
     constructor Create; reintroduce;
   end;
 
-  TIOSystem = class( TInterfacedObject, ISubsystem )
+  TIOSystem = class( TInterfacedObject, IThreadSubSystem )
   private
     fMessagePipe: IMessagePipe;
   private //- ISubSystem -//
+    function MainThread: boolean;
+    function Dedicated: boolean;
     function Install( MessageBus: IMessageBus ): boolean;
     function Initialize( MessageBus: IMessageBus ): boolean;
     function Execute: boolean;
-    function Finalize: boolean;
+    procedure Finalize;
   end;
 
 procedure WriteToConsole(s: string);
@@ -53,6 +57,11 @@ constructor TSecondTimer.Create;
 begin
   inherited Create;
   fSecondCounter := 0;
+end;
+
+function TSecondTimer.MainThread: boolean;
+begin
+  Result := False;
 end;
 
 function TSecondTimer.MessageHandler( aMessage: TMessage ): nativeuint;
@@ -76,6 +85,11 @@ begin
   end;
 end;
 
+function TSecondTimer.Dedicated: boolean;
+begin
+  Result := True;
+end;
+
 function TSecondTimer.Execute: boolean;
 begin
   Result := False;
@@ -90,9 +104,9 @@ begin
   Result := True;
 end;
 
-function TSecondTimer.Finalize: boolean;
+procedure TSecondTimer.Finalize;
 begin
-  Result := True;
+  //- Nothing to see here, method is required by interface -//
 end;
 
 function TSecondTimer.Initialize(MessageBus: IMessageBus): boolean;
@@ -107,6 +121,11 @@ begin
 end;
 
 { TIOSystem }
+
+function TIOSystem.Dedicated: boolean;
+begin
+  Result := True;
+end;
 
 function TIOSystem.Execute: boolean;
 var
@@ -128,11 +147,12 @@ begin
       Result := False;
     end;
   end;
+  Sleep(0); // keep from burning CPU cycles, IO is main thread dedicated and not sleeping on the GetMessage() call.
 end;
 
-function TIOSystem.Finalize: boolean;
+procedure TIOSystem.Finalize;
 begin
-  Result := True;
+  //- Nothing to see here, method is required by interface -//
 end;
 
 function TIOSystem.Initialize(MessageBus: IMessageBus): boolean;
@@ -146,24 +166,24 @@ begin
   Result := True;
 end;
 
+function TIOSystem.MainThread: boolean;
+begin
+  Result := True;
+end;
+
 begin
   Writeln('Press ''x'' to exit.');
   Writeln('Press ''r'' to request second count');
 
   Writeln('Starting up timer threads.');
-  ThreadPool := TThreadPool.Create;
+  ThreadSystem := TThreadSystem.Create;
   try
     KeepGoing := True;
-    ThreadPool.InstallSubSystem(TSecondTimer.Create);
-    ThreadPool.InstallSubSystem(TIOSystem.Create);
-    ThreadPool.Start;
-    try
-      while keepgoing do sleep(1);
-    finally
-      ThreadPool.Stop;
-    end;
+    ThreadSystem.InstallSubSystem(TSecondTimer.Create);
+    ThreadSystem.InstallSubSystem(TIOSystem.Create);
+    ThreadSystem.Run;
   finally
-    ThreadPool := nil;
+    ThreadSystem := nil;
   end;
   Writeln('Shutting down aux threads.');
 end.
