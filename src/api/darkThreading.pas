@@ -436,10 +436,24 @@ type
     function InstallSubSystem( aSubSystem: IThreadSubsystem ): boolean;
 
     ///  <summary>
+    ///    Starts the ancillary threads running. When using the Start()
+    ///    method (rather than the run method), the main thread remains with
+    ///    the calling application. Sub-systems installed on the main thread
+    ///    will not be excuted when using Start()/Stop().
+    ///  </summary>
+    procedure Start;
+
+    ///  <summary>
+    ///    Stops the ancillary threads which were started with a call to the
+    ///    Start() method.
+    ///  </summary>
+    procedure Stop;
+
+    ///  <summary>
     ///    Starts the thread system running. Auxhillary threads are started
     ///    first, and then the main thread runs. Execution continues until
     ///    the main thread exits, at which time the Auxhillary threads are
-    ///    also stopped.
+    ///    also stopped. (Use exclusive to the Start() and Stop() methods).
     ///  </summary>
     procedure Run;
   end;

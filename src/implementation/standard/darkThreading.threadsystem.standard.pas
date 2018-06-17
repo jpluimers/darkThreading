@@ -33,12 +33,15 @@ uses
 type
   TThreadSystem = class( TInterfacedObject, IThreadSystem )
   private
+    fRunning: boolean;
     fMessageBus: IMessageBus;
     fThreadPool: IThreadPool;
     fMainThread: IPoolThread;
   private //- IThreadSystem -//
     function MessageBus: IMessageBus;
     function InstallSubSystem( aSubSystem: IThreadSubsystem ): boolean;
+    procedure Start;
+    procedure Stop;
     procedure Run;
     function InstallAnyThread(aSubSystem: IThreadSubSystem): boolean;
     function InstallMainThread(aSubSystem: IThreadSubSystem): boolean;
@@ -49,6 +52,7 @@ type
 
 implementation
 uses
+  sysutils,
   darkThreading.messagebus.standard,
   darkCollections.list;
 
@@ -84,6 +88,7 @@ var
   DesiredThreads: uint32;
 begin
   inherited Create;
+  fRunning := False;
   fThreadPool := nil; //- unless required...
   fMessageBus := TMessageBus.Create;
   //- Determine the number of threads that are required.
@@ -105,6 +110,9 @@ end;
 
 destructor TThreadSystem.Destroy;
 begin
+  if fRunning then begin
+    Stop;
+  end;
   fMainThread := nil;
   fThreadPool := nil;
   fMessageBus := nil;
@@ -140,12 +148,12 @@ begin
       end;
     end;
   end;
-  if assigned(fMainThread) then begin
-    Executor := (fMainThread as IThreadExecutor);
-    if not Executor.isDedicated then begin
-      ExecutorList.Add(Executor);
-    end;
-  end;
+//  if assigned(fMainThread) then begin
+//    Executor := (fMainThread as IThreadExecutor);
+//    if not Executor.isDedicated then begin
+//      ExecutorList.Add(Executor);
+//    end;
+//  end;
   //- If there are no executors, this method will fail.
   if ExecutorList.Count=0 then begin
     exit;
@@ -179,20 +187,43 @@ end;
 
 procedure TThreadSystem.Run;
 begin
+  Start;
+  try
+    //- Execute the main thread
+    if assigned(fMainThread) then begin
+      if fMainThread.Initialize then begin
+        try
+          while fMainThread.Execute do;
+        finally
+          fMainThread.Finalize;
+        end;
+      end;
+    end;
+  finally
+    Stop;
+  end;
+end;
+
+procedure TThreadSystem.Start;
+begin
+  if fRunning then begin
+
+    raise
+      Exception.Create('Thread system already started.');
+  end;
+  fRunning := True;
   //- Start auxhillary threads.
   if assigned(fThreadPool) then begin
     fThreadPool.Start;
   end;
-  //- Execute the main thread
-  if assigned(fMainThread) then begin
-    if fMainThread.Initialize then begin
-      try
-        while fMainThread.Execute do;
-      finally
-        fMainThread.Finalize;
-      end;
-    end;
+end;
+
+procedure TThreadSystem.Stop;
+begin
+  if not fRunning then begin
+    exit;
   end;
+  fRunning := False;
   //- Terminate the auxhillary threads.
   if assigned(fThreadPool) then begin
     fThreadPool.Stop;
