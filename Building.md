@@ -26,10 +26,10 @@ In order to use darkThreading within your own project, you must add the output d
 Within the IDE, from within "Project Options" ensure that the "Target" drop-down is set to "All configurations - All Platforms"
 Now add to your search path as follows:
 
-  .....\darkUnicode\out\$(Platform)\$(Config)
-  .....\darkCollections\out\$(Platform)\$(Config)
-  .....\darkIO\out\$(Platform)\$(Config)
-  .....\darkLog\out\$(Platform)\$(Config)
-  .....\darkThreading\out\$(Platform)\$(Config)
+  * .....\darkUnicode\out\$(Platform)\$(Config)
+  * .....\darkCollections\out\$(Platform)\$(Config)
+  * .....\darkIO\out\$(Platform)\$(Config)
+  * .....\darkLog\out\$(Platform)\$(Config)
+  * .....\darkThreading\out\$(Platform)\$(Config)
   
 (where ..... is the directory in which you cloned the dark library projects).
